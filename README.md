@@ -48,3 +48,32 @@ All this is under [MIT License](http://opensource.org/licenses/MIT), I read some
 This is the one about MD5. Deciding on and expanding to a library to implement MD5 was a thing. Looking at MD5 implementations left me with the notion that while it's a solved problem it's also still 'some work' to calculate, even on the small strings in the puzzle. So given O(n) and merely counting up from 0 and testing each result for the matching pattern, I expected performance to be an issue. General optimization was on my mind. Once the second part of the puzzle was revealed, I decided to attempt several optimizations and time the results. At the end, both parts are solved by spinning through the integers once and evaluating both parts inside the same loop. I decided to time that (approx 1.6 sec for both parts together). I also decided to implement the solution using byte-wise evaluation instead of string evaluation. That meant not having to render the MD5 hash until I needed to show the result string. Calculating those two took approx 0.27 sec. It's not interesting to know the hardware here, but merely to say that the binary evalation was just over 5x faster. I thought it would have been even faster.
 
 >NB: I chose the openSSL MD5 implementation. I hadn't coded against it before, so there was some setup for the headers+library needed. That includes symlinks for the libraries and header folders, and extra params on the build in the makefile.
+
+## Day 06
+On the first part of the puzzle, the lights were simply on or off; a bool is fine for the array of lights. For the second part, there weren't any requirements that specified the range of values possible. The only inferrable constraint is that the values were always positive, so an unsigned type would work. If we see that there are 300 operations specified, we can rationally expect that the brightness value of a single light would never exceed 255. So an unsigned char would work for storage.
+
+However, I got obsessed with avoiding the constraint. I had factored the code to handle different storage types but if I used anything other than `char` or `unsigned char` in the `typedef char light;` definition, I got wrong and different answers:
+
+```text
+    using lights of type 'char'
+    Part 1, lights remaining on 569999
+    Part 2, total brightness 17836115
+
+    using lights of type 'short'
+    Part 1, lights remaining on 570888
+    Part 2, total brightness 17891241
+
+    using lights of type 'int'
+    Part 1, lights remaining on 572474
+    Part 2, total brightness 18001471
+
+    using lights of type 'long'
+    Part 1, lights remaining on 575036
+    Part 2, total brightness 18221659
+```
+So obviously I have a bug in my pointer arithmetic, or in double-compensating for memory spans vs letting the compiler handle pointer arithmetic. Once fixed, even `double` worked too:
+```text
+    using lights of type 'double'
+    Part 1, lights remaining on 569999
+    Part 2, total brightness 17836115
+```
